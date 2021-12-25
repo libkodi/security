@@ -1,0 +1,9 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+io.github.libkodi.security.SecurityContextConfiguration,\
+io.github.libkodi.security.config.ApiConfiguration,\
+io.github.libkodi.security.config.CorsFilterConfig,\
+io.github.libkodi.security.config.ApiArgumentsConfig,\
+io.github.libkodi.security.aspect.ApiAspect,\
+io.github.libkodi.security.aspect.ApiRoleAspect,\
+io.github.libkodi.security.aspect.ApiPermissionAspect,\
+io.github.libkodi.security.interceptor.ApiInjectResolver
