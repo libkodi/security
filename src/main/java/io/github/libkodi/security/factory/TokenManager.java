@@ -83,7 +83,11 @@ public class TokenManager implements TokenManagerBean {
 		String token = request.getParameter(tokenKey);
 		
 		if (StringUtils.isEmpty(token)) {
-			return null;
+			token = request.getHeader(tokenKey);
+			
+			if (StringUtils.isEmpty(token)) {
+				return null;
+			}
 		}
 		
 		JwtParser parser = new JwtParser(key, token);
