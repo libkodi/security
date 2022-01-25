@@ -92,7 +92,10 @@ public class OldMetabolicDataSet<V> {
 				tail = ds.getPrev();
 			} else {
 				values.get(ds.getPrev()).setNext(ds.getNext());
-				values.get(ds.getNext()).setPrev(ds.getPrev());
+				
+				if (ds.getNext() != null) {
+					values.get(ds.getNext()).setPrev(ds.getPrev());
+				}
 			}
 			
 			return ds.getValue();

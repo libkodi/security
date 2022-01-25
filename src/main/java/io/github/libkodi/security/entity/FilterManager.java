@@ -70,8 +70,9 @@ public class FilterManager {
 		while (iter.hasNext()) {
 			filter = iter.next();
 			match = (String) filter.get("regexp");
+			Pattern reg = Pattern.compile(match);
 			
-			if (Pattern.matches(match, uri)) {
+			if (reg.matcher(uri).find()) {
 				handler = (AuthFilterHandle) filter.get("handler");
 				break;
 			}
