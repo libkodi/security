@@ -1,10 +1,8 @@
 package io.github.libkodi.security;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -16,8 +14,8 @@ import com.alibaba.fastjson.JSONObject;
 
 import io.github.libkodi.security.interfaces.Cache;
 import io.github.libkodi.security.properties.AuthProperties;
-import io.github.libkodi.security.utils.OldMetabolicDataSet;
 import io.github.libkodi.security.utils.StringUtils;
+import io.github.libkodi.security.utils.dataset.DataSet;
 
 public class CacheManager implements Serializable {
 	private static final long serialVersionUID = 6536390743435435098L;
@@ -26,7 +24,7 @@ public class CacheManager implements Serializable {
 	private RedisTemplate<String, Object> redis;
 	private AuthProperties properties;
 	final Object mutex;
-	private OldMetabolicDataSet<Cache> caches = new OldMetabolicDataSet<Cache>();
+	private DataSet<Cache> caches = new DataSet<Cache>();
 	private HashMap<String, Object> vars = new HashMap<String, Object>();
 	
 	public static CacheManager getInstance(AuthProperties properties, RedisTemplate<String, Object> redis) {
@@ -135,22 +133,7 @@ public class CacheManager implements Serializable {
 	}
 	
 	public void update() {
-		Iterator<Cache> iter = caches.iterator();
-		ArrayList<String> keys = new ArrayList<String>();
-		
-		while (iter.hasNext()) {
-			Cache cache = iter.next();
-			
-			if (cache.isInvalid()) {
-				keys.add(cache.getCacheId());
-			} else {
-				break;
-			}
-		}
-		
-		for (String key : keys) {
-			caches.remove(key);
-		}
+		caches.update();
 	}
 	
 	public boolean contains(String CacheId) {
@@ -385,12 +368,10 @@ public class CacheManager implements Serializable {
 					} else {
 						cache.renew();
 					}
-				} else {
-					cache.put("$activetime", System.currentTimeMillis());
 				}
 				
 				if (!properties.isRedisEnable()) {
-					caches.put(cacheId, cache);
+					caches.put(cacheId, cache, idleTimeout, maxAliveTimeout);
 				}
 			} else if (properties.isRedisEnable()) {
 				long createtime = cache.get("$createtime", long.class);
