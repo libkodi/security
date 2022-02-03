@@ -133,8 +133,8 @@ public class HttpRequestUtils {
 	}
 
 	public static JSONObject getAllParameter(HttpServletRequest request, CacheManager cacheManager) throws UnsupportedEncodingException {
-		byte[] body = cacheManager.get("$body", byte[].class);
-		JSONObject allParams = cacheManager.get("$params", JSONObject.class);
+		byte[] body = cacheManager.getThreadVar("$body", byte[].class);
+		JSONObject allParams = cacheManager.getThreadVar("$params", JSONObject.class);
 		
 		/**
 		 * 整合所有可用参数
@@ -162,7 +162,7 @@ public class HttpRequestUtils {
 				}
 			}
 			
-			cacheManager.put("$params", allParams);
+			cacheManager.addThreadVar("$params", allParams);
 		}
 		
 		return allParams;

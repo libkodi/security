@@ -15,5 +15,4 @@ public interface Cache {
 	public String[] getPermissions();
 	public void destory();
 	public void renew();
-	public boolean isInvalid();
 }

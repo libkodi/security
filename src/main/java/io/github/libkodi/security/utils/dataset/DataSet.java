@@ -64,16 +64,18 @@ public class DataSet<T> {
 	}
 	
 	public void update() {
-		Iterator<Entry<String, DataNode<T>>> iter = value.iterator(true);
-		
-		while(iter.hasNext()) {
-			Entry<String, DataNode<T>> entry = iter.next();
-			DataNode<T> node = entry.getValue();
+		synchronized (mutex) {
+			Iterator<Entry<String, DataNode<T>>> iter = value.iterator(true);
 			
-			if (node.isIdleTimeout() || node.isAliveTimeout()) {
-				value.remove(entry.getKey());
-			} else {
-				break;
+			while(iter.hasNext()) {
+				Entry<String, DataNode<T>> entry = iter.next();
+				DataNode<T> node = entry.getValue();
+				
+				if (node.isIdleTimeout() || node.isAliveTimeout()) {
+					value.remove(entry.getKey());
+				} else {
+					break;
+				}
 			}
 		}
 	}

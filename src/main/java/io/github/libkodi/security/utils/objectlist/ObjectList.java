@@ -84,6 +84,10 @@ public class ObjectList<K, V> {
 			
 			start = node; // 并修改开始指向
 			
+			if (end == null) {
+				end = node;
+			}
+			
 			data.put(key, node);
 		}
 	}

@@ -16,7 +16,6 @@ import io.github.libkodi.security.SecurityManager;
 import io.github.libkodi.security.annotation.ApiBody;
 import io.github.libkodi.security.annotation.ApiCache;
 import io.github.libkodi.security.annotation.ApiParam;
-import io.github.libkodi.security.interfaces.Cache;
 import io.github.libkodi.security.interfaces.GetCacheIdHandle;
 import io.github.libkodi.security.properties.AuthProperties;
 import io.github.libkodi.security.utils.HttpRequestUtils;
@@ -61,7 +60,7 @@ public class ApiInjectResolver implements HandlerMethodArgumentResolver {
 		/**
 		 * 获取请求主体
 		 */
-		byte[] body = cacheManager.get("$body", byte[].class);
+		byte[] body = cacheManager.getThreadVar("$body", byte[].class);
 		
 		if (body == null) {
 			if (request instanceof WebHttpServletRequestWarpper) {
@@ -70,7 +69,7 @@ public class ApiInjectResolver implements HandlerMethodArgumentResolver {
 				body = HttpRequestUtils.getBody(request);
 			}
 			
-			cacheManager.put("$body", body);
+			cacheManager.addThreadVar("$body", body);
 		}
 		
 		// 如果获取请求主体
@@ -110,20 +109,12 @@ public class ApiInjectResolver implements HandlerMethodArgumentResolver {
 		// 如果获取会话
 		else if (parameter.hasParameterAnnotation(ApiCache.class)) {
 			ApiCache apiCache = parameter.getParameterAnnotation(ApiCache.class);
-			String cacheId = getCacheIdHandle != null ? getCacheIdHandle.call(request, properties.getCacheKey()) : HttpRequestUtils.getParameter(request, properties.getCacheKey());
+			String cacheId = getCacheIdHandle != null ? getCacheIdHandle.call(request, properties.getCache().getKey()) : HttpRequestUtils.getParameter(request, properties.getCache().getKey());
 			
 			if (!StringUtils.isEmpty(cacheId)) {
-				Cache cache = null;
-				
-				if (cacheManager.contains(cacheId)) {
-					cache = cacheManager.instance(cacheId);
-				} else if (apiCache.create()) {
-					cache = cacheManager.instance();
-				}
-				
-				return cache;
+				return cacheManager.getCache(cacheId);
 			} else if (apiCache.create()) {
-				return cacheManager.instance();
+				return cacheManager.create();
 			}
 		}
 		

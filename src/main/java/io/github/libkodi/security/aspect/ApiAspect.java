@@ -10,10 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 
 import io.github.libkodi.security.SecurityManager;
-import io.github.libkodi.security.entity.FilterManager;
 import io.github.libkodi.security.error.Error401;
 import io.github.libkodi.security.error.Error402;
 import io.github.libkodi.security.error.Error500;
+import io.github.libkodi.security.factory.FilterManager;
 import io.github.libkodi.security.interfaces.AuthFilterHandle;
 import io.github.libkodi.security.interfaces.ExceptionHandle;
 import io.github.libkodi.security.utils.ServletRequestUtils;
@@ -67,10 +67,12 @@ public class ApiAspect {
 			return filter.doAfterFilter(context, response, point.proceed());
 		} catch (Exception e) {
 			if (errorCallback != null) {
-				return errorCallback.call(request, response, e);
-			} else {
-				return (new Error500(e.getMessage())).sync(request, response);
+				try {
+					errorCallback.call(request, response, e);
+				} catch (Exception e2) {}
 			}
+			
+			return (new Error500(e.getMessage())).sync(request, response);
 		}
 	}
 	

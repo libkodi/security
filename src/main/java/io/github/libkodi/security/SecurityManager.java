@@ -60,7 +60,7 @@ public class SecurityManager {
 	}
 	
 	private void init() {
-		if (!properties.isRedisEnable()) {
+		if (!properties.getRedis().isEnable()) {
 			long sleepTime = Math.max(properties.getRefreshPeriod(), 1) * 1000;
 			
 			/**

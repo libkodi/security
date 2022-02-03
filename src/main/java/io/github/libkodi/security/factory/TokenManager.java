@@ -40,11 +40,11 @@ public class TokenManager implements TokenManagerBean {
 	}
 	
 	private void initJwtKey() {
-		key = (String) cacheManager.getEnvironment("jwtkey");
+		key = (String) cacheManager.getEnvVar("jwtkey");
 		
 		if (StringUtils.isEmpty(key)) {
 			key = getRandomKey(64);
-			cacheManager.addEnvironment("jwtkey", key);
+			cacheManager.addEnvVar("jwtkey", key);
 		}
 	}
 
@@ -60,18 +60,18 @@ public class TokenManager implements TokenManagerBean {
 	}
 	
 	private void setCache(Cache cache) {
-		cacheManager.put("$cache", cache);
+		cacheManager.addThreadVar("$cache", cache);
 	}
 	
 	public Cache getCache() {
-		return (Cache) cacheManager.get("$cache");
+		return (Cache) cacheManager.getThreadVar("$cache");
 	}
 	
 	@Override
 	public String create() throws Exception {
 		JwtBuilder builder = new JwtBuilder();
 		
-		Cache cache = cacheManager.instance(idleTimeout, maxAliveTimeout);		
+		Cache cache = cacheManager.create(cacheManager.randomKey(), idleTimeout, maxAliveTimeout, true);		
 		builder.withJWTId(cache.getCacheId());
 		setCache(cache);
 		
@@ -92,7 +92,7 @@ public class TokenManager implements TokenManagerBean {
 		
 		JwtParser parser = new JwtParser(key, token);
 		String cacheId = parser.getJwtId();
-		Cache cache = cacheManager.instance(cacheId, 0, 0, false);
+		Cache cache = cacheManager.create(cacheId, 0, 0, false);
 		setCache(cache);
 		
 		return cache;

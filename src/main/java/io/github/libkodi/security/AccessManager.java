@@ -1,24 +1,23 @@
 package io.github.libkodi.security;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.data.redis.core.RedisTemplate;
 
+import io.github.libkodi.security.entity.Access;
 import io.github.libkodi.security.interfaces.GetRemoteAddressHandle;
 import io.github.libkodi.security.properties.AuthProperties;
 import io.github.libkodi.security.utils.HttpRequestUtils;
 import io.github.libkodi.security.utils.StringUtils;
+import io.github.libkodi.security.utils.dataset.DataSet;
 
 public class AccessManager {
 	private static AccessManager instance;
 	private AuthProperties properties;
 	private RedisTemplate<String, Object> redis;
-	private HashMap<String, HashMap<String, Object>> map = new HashMap<String, HashMap<String, Object>>();
+	private DataSet<Access> data = new DataSet<Access>();
 	private GetRemoteAddressHandle getRemoteAddressHandle;
 	private final Object mutex;
 	
@@ -38,54 +37,15 @@ public class AccessManager {
 	}
 
 	public void update() {
-		if (!properties.isIpLimitEnable()) {
-			return;
+		if (properties.getAccess().isEnable()) {
+			data.update();
 		}
-		
-		try {
-			ArrayList<String> keys = new ArrayList<String>();
-			
-			synchronized (mutex) {
-				Collections.addAll(keys, map.keySet().toArray(new String[0]));
-			}
-			
-			if (keys.size() > 0) {
-				for (String key : keys) {
-					try {
-						if (map.containsKey(key)) {
-							HashMap<String, Object> m = map.get(key);
-							boolean blocked = (boolean) m.get("blocked");
-							long createtime = (long) m.get("createtime");
-							long now = System.currentTimeMillis() / 1000;
-							
-							if (!blocked && (now - createtime) >= properties.getIpLimitSeconds()) {
-								synchronized (mutex) {
-									map.remove(key);
-								}
-							} else if (blocked) {
-								long blockedtime = (long) m.get("blockedtime");
-								
-								if (now - blockedtime >= properties.getIpBlockSeconds()) {
-									synchronized (mutex) {
-										map.remove(key);
-									}
-								}
-							}
-						}
-					} catch (Exception e) {
-						synchronized (mutex) {
-							map.remove(key);
-						}
-					}
-				}
-			}
-		} catch (Exception e) {}
 	}
 
 	public boolean verify(HttpServletRequest request) {
 		synchronized (mutex) {
 			try {
-				if (!properties.isIpLimitEnable()) {
+				if (!properties.getAccess().isEnable()) {
 					return true;
 				}
 				
@@ -97,7 +57,7 @@ public class AccessManager {
 				
 				increment(clientIp);
 				
-				return checkBlocked(clientIp);
+				return !checkBlocked(clientIp);
 			} catch (Exception e) {
 				return false;
 			}
@@ -105,36 +65,34 @@ public class AccessManager {
 	}
 
 	private boolean checkBlocked(String key) {
-		if (!properties.isRedisEnable()) {
-			HashMap<String, Object> m = map.get(key);
-			long createtime = (long) m.get("createtime");
-			long total = (long) m.get("count");
-			long now = System.currentTimeMillis() / 1000;
+		if (!properties.getRedis().isEnable()) {
+			Access access = data.get(key);
 			
-			if (now - createtime < properties.getIpLimitSeconds() && total <= properties.getIpLimit()) {
+			if (access.getCount() > properties.getAccess().getLimit()) {
+				access.setBlocked(true);
+				data.remove(key);
+				data.put(key, access, 0, properties.getAccess().getBlock());
 				return true;
 			} else {
-				m.put("blocked", true);
-				m.put("blockedtime", System.currentTimeMillis() / 1000);
 				return false;
 			}
 		} else {
 			int total = (int) redis.opsForValue().get(joinRedisKey(key));
 			
-			if (total <= properties.getIpLimit()) {
-				return true;
-			} else {
-				redis.opsForValue().set(joinRedisKey(key) + ":blocked", true, properties.getIpBlockSeconds(), TimeUnit.SECONDS);
-				redis.delete(joinRedisKey(key));
+			if (total <= properties.getAccess().getLimit()) {
 				return false;
+			} else {
+				redis.opsForValue().set(joinRedisKey(key) + ":blocked", true, properties.getAccess().getBlock(), TimeUnit.SECONDS);
+				redis.delete(joinRedisKey(key));
+				return true;
 			}
 		}
 	}
 
 	private boolean isBlocked(String key) {
-		if (!properties.isRedisEnable()) {
-			if (map.containsKey(key)) {
-				return (boolean) map.get(key).get("blocked");
+		if (!properties.getRedis().isEnable()) {
+			if (data.containsKey(key)) {
+				return data.get(key).isBlocked();
 			} else {
 				return false;
 			}
@@ -144,22 +102,17 @@ public class AccessManager {
 	}
 
 	private long increment(String key) {
-		if (!properties.isRedisEnable()) {
+		if (!properties.getRedis().isEnable()) {
 			long total = 0;
 			
-			if (map.containsKey(key)) {
-				HashMap<String, Object> m = map.get(key);
-				total = (long) m.get("count");
+			if (data.containsKey(key)) {
+				total = data.get(key).increment();
 			} else {
-				HashMap<String, Object> m = new HashMap<String, Object>();
-				m.put("createtime", System.currentTimeMillis() / 1000);
-				m.put("blocked", false);
-				map.put(key, m);
+				Access access = new Access();
+				access.setIp(key);
+				total = access.increment();
+				data.put(key, access, 0, properties.getAccess().getRange());
 			}
-			
-			total += 1;
-			
-			map.get(key).put("count", total);
 			
 			return total;
 		} else {
@@ -173,7 +126,7 @@ public class AccessManager {
 			long total = redis.opsForValue().increment(rkey);
 			
 			if (first) {
-				redis.expire(rkey, properties.getIpLimitSeconds(), TimeUnit.SECONDS);
+				redis.expire(rkey, properties.getAccess().getRange(), TimeUnit.SECONDS);
 			}
 			
 			return total;
@@ -181,7 +134,7 @@ public class AccessManager {
 	}
 
 	private String joinRedisKey(String key) {
-		return StringUtils.join(":", properties.getRedisKeySuffix(), "ip", key);
+		return StringUtils.join(":", properties.getRedis().getPrefix(), "ip", key);
 	}
 
 }

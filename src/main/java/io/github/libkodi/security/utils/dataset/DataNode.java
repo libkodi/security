@@ -40,7 +40,7 @@ public class DataNode<T> {
 	}
 	
 	public boolean isIdleTimeout() {
-		return ((System.currentTimeMillis() - activetime) / 1000) >= idleTimeout;
+		return idleTimeout < 1 ? false : ((System.currentTimeMillis() - activetime) / 1000) >= idleTimeout;
 	}
 	
 	public boolean isAliveTimeout() {

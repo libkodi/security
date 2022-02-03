@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.RedisTemplate;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
 import io.github.libkodi.security.interfaces.Cache;
@@ -20,12 +21,12 @@ import io.github.libkodi.security.utils.dataset.DataSet;
 public class CacheManager implements Serializable {
 	private static final long serialVersionUID = 6536390743435435098L;
 	private static CacheManager instance = null;
-	private ThreadLocal<JSONObject> tempVars = new ThreadLocal<JSONObject>();
+	private ThreadLocal<JSONObject> threadVars = new ThreadLocal<JSONObject>();
 	private RedisTemplate<String, Object> redis;
 	private AuthProperties properties;
 	final Object mutex;
 	private DataSet<Cache> caches = new DataSet<Cache>();
-	private HashMap<String, Object> vars = new HashMap<String, Object>();
+	private HashMap<String, Object> envVars = new HashMap<String, Object>();
 	
 	public static CacheManager getInstance(AuthProperties properties, RedisTemplate<String, Object> redis) {
 		if (instance == null) {
@@ -46,19 +47,19 @@ public class CacheManager implements Serializable {
 	 *  线程变量操作
 	 * 
 	 */
-	public void put(String key, Object value) {
-		JSONObject data = tempVars.get();
+	public void addThreadVar(String key, Object value) {
+		JSONObject data = threadVars.get();
 		
 		if (data == null) {
 			data = new JSONObject();
-			tempVars.set(data);
+			threadVars.set(data);
 		}
 		
 		data.put(key, value);
 	}
 	
-	public Object get(String key) {
-		JSONObject data = tempVars.get();
+	public Object getThreadVar(String key) {
+		JSONObject data = threadVars.get();
 		
 		if (data == null) {
 			return null;
@@ -67,8 +68,8 @@ public class CacheManager implements Serializable {
 		}
 	}
 	
-	public <T> T get(String key, Class<T> clazz) {
-		JSONObject data = tempVars.get();
+	public <T> T getThreadVar(String key, Class<T> clazz) {
+		JSONObject data = threadVars.get();
 		
 		if (data == null) {
 			return null;
@@ -77,8 +78,8 @@ public class CacheManager implements Serializable {
 		}
 	}
 	
-	public Object remove(String key) {
-		JSONObject data = tempVars.get();
+	public Object removeThreadVar(String key) {
+		JSONObject data = threadVars.get();
 		
 		if (data == null) {
 			return null;
@@ -87,11 +88,11 @@ public class CacheManager implements Serializable {
 		}
 	}
 	
-	public JSONObject delete() {
-		JSONObject data = tempVars.get();
+	public JSONObject deleteAllThreadVars() {
+		JSONObject data = threadVars.get();
 		
 		if (data != null) {
-			tempVars.remove();
+			threadVars.remove();
 		}
 		
 		return data;
@@ -102,62 +103,58 @@ public class CacheManager implements Serializable {
 	 * 其它变量操作
 	 * 
 	 */
-	public void addEnvironment(String key, Object value) {
+	public void addEnvVar(String key, Object value) {
 		synchronized (mutex) {
-			if (properties.isRedisEnable()) {
+			if (properties.getRedis().isEnable()) {
 				redis.opsForValue().set(addSuffix(key), value);
 			} else {
-				vars.put(key, value);
+				envVars.put(key, value);
 			}
 		}
 	}
 	
-	public Object getEnvironment(String key) {
+	public Object getEnvVar(String key) {
 		synchronized (mutex) {
-			if (properties.isRedisEnable()) {
+			if (properties.getRedis().isEnable()) {
 				return redis.opsForValue().get(addSuffix(key));
 			} else {
-				return vars.get(key);
+				return envVars.get(key);
 			}
 		}
 	}
 	
-	public void removeEnvironment(String key) {
+	public void removeEnvVar(String key) {
 		synchronized (mutex) {
-			if (properties.isRedisEnable()) {
+			if (properties.getRedis().isEnable()) {
 				redis.delete(addSuffix(key));
 			} else {
-				vars.remove(key);
+				envVars.remove(key);
 			}
 		}
 	}
 	
 	public void update() {
-		caches.update();
-	}
-	
-	public boolean contains(String CacheId) {
-		if (properties.isRedisEnable()) {
-			return redis.hasKey(addSuffix(CacheId));
-		} else {
-			return caches.containsKey(CacheId);
+		if (!properties.getRedis().isEnable()) {
+			caches.update();
 		}
 	}
 	
-	public Cache instance() {
-		return instance(getUUID(), properties.getCacheIdleTimeout(), properties.getCacheMaxAlive(), true);
+	public boolean contains(String CacheId) {
+		synchronized (mutex) {
+			if (properties.getRedis().isEnable()) {
+				return redis.hasKey(addSuffix(CacheId));
+			} else {
+				return caches.containsKey(CacheId);
+			}
+		}
 	}
 	
-	public Cache instance(int expires) {
-		return instance(getUUID(), 0, expires, true);
-	}
-	
-	private String getUUID() {
+	public String randomKey() {
 		return UUID.randomUUID().toString().replace("-", "");
 	}
 	
 	private String addSuffix(String key) {
-		String suffix = properties.getRedisKeySuffix();
+		String suffix = properties.getRedis().getPrefix();
 		
 		if (StringUtils.isEmpty(suffix)) {
 			return key;
@@ -166,35 +163,35 @@ public class CacheManager implements Serializable {
 		}
 	}
 	
-	public Cache instance(String CacheId) {
-		return instance(CacheId, true);
+	public int getMaxIdle() {
+		return properties.getCache().getMaxIdle();
 	}
 	
-	public Cache instance(String CacheId, boolean creatable) {
-		return instance(CacheId, properties.getCacheIdleTimeout(), properties.getCacheMaxAlive(), creatable);
+	public int getMaxAlive() {
+		return properties.getCache().getMaxAlive();
 	}
 	
-	public Cache instance(String cacheId, int expires) {
-		return instance(cacheId, expires, true);
+	public Cache getCache(String cacheId) {
+		return create(cacheId, 0, 0, false);
 	}
 	
-	public Cache instance(String CacheId, int expires, boolean creatable) {
-		return instance(CacheId, 0, expires, creatable);
+	public Cache create(int idleTimeout, int aliveTimeout, boolean creatable) {
+		return create(randomKey(), idleTimeout, aliveTimeout, creatable);
 	}
 	
-	public Cache instance(int idleTimeout, int maxAliveTimeout) {
-		return instance(idleTimeout, maxAliveTimeout, true);
+	public Cache create(int idleTimeout, int aliveTimeout) {
+		return create(idleTimeout, aliveTimeout, true);
 	}
 	
-	public Cache instance(int idleTimeout, int maxAliveTimeout, boolean creatable) {
-		return instance(getUUID(), idleTimeout, maxAliveTimeout, creatable);
+	public Cache create(int aliveTimeout) {
+		return create(0, aliveTimeout, true);
 	}
 	
-	public Cache instance(String cacheId, int idleTimeout, int maxAliveTimeout) {
-		return instance(cacheId, idleTimeout, maxAliveTimeout, true);
+	public Cache create() {
+		return create(getMaxIdle(), getMaxAlive(), true);
 	}
 
-	public Cache instance(String cacheId, int idleTimeout, int maxAliveTimeout, boolean creatable) {
+	public Cache create(String cacheId, int idleTimeout, int maxAliveTimeout, boolean creatable) {
 		synchronized (mutex) {
 			Cache cache;
 			
@@ -202,15 +199,8 @@ public class CacheManager implements Serializable {
 			
 			if (!hasCache && !creatable) {
 				return null;
-			} else if (!properties.isRedisEnable()) {
-				cache = caches.get(cacheId);
-				
-				if (cache != null) {
-					cache.renew();
-					return cache;
-				} else if (!creatable) {
-					return null;
-				}
+			} else if (hasCache && !properties.getRedis().isEnable()) {
+				return caches.get(cacheId);
 			}
 			
 			cache = new Cache() {
@@ -218,17 +208,17 @@ public class CacheManager implements Serializable {
 				
 				@Override
 				public void setRoles(String[] values) {
-					put("roles", values);
+					put("$roles", JSON.toJSONString(values));
 				}
 				
 				@Override
 				public void setPermissions(String[] values) {
-					put("permissions", values);
+					put("$permissions", JSON.toJSONString(values));
 				}
 				
 				@Override
 				public void put(String key, Object value) {
-					if (properties.isRedisEnable()) {
+					if (properties.getRedis().isEnable()) {
 						redis.opsForHash().put(addSuffix(cacheId), key, value);
 					} else {
 						map.put(key, value);
@@ -237,7 +227,7 @@ public class CacheManager implements Serializable {
 				
 				@Override
 				public void remove(String key) {
-					if (properties.isRedisEnable()) {
+					if (properties.getRedis().isEnable()) {
 						redis.opsForHash().delete(addSuffix(cacheId), key);
 					} else {
 						map.remove(key);
@@ -246,8 +236,8 @@ public class CacheManager implements Serializable {
 				
 				@Override
 				public Set<String> keys() {
-					if (properties.isRedisEnable()) {
-						return redis.keys(properties.getRedisKeySuffix() + "*");
+					if (properties.getRedis().isEnable()) {
+						return redis.keys(properties.getRedis().getPrefix() + "*");
 					} else {
 						return map.keySet();
 					}
@@ -266,7 +256,7 @@ public class CacheManager implements Serializable {
 				
 				@Override
 				public Object get(String key) {
-					if (properties.isRedisEnable()) {
+					if (properties.getRedis().isEnable()) {
 						return redis.opsForHash().get(addSuffix(cacheId), key);
 					} else {
 						return map.get(key);
@@ -275,109 +265,70 @@ public class CacheManager implements Serializable {
 				
 				@Override
 				public String[] getRoles() {
-					return (String[]) get("roles");
+					String roles = get("$roles", String.class);
+					
+					if (roles != null) {
+						return JSON.parseArray(roles).toArray(new String[0]);
+					} else {
+						return new String[0];
+					}
 				}
 				
 				@Override
 				public String[] getPermissions() {
-					return (String[]) get("permissions");
+					String permissions = get("$permissions", String.class);
+					
+					if (permissions != null) {
+						return JSON.parseArray(permissions).toArray(new String[0]);
+					} else {
+						return new String[0];
+					}
 				}
 				
 				@Override
 				public void destory() {
-					if (properties.isRedisEnable()) {
+					if (properties.getRedis().isEnable()) {
 						redis.delete(addSuffix(cacheId));
 					} else {
 						caches.remove(cacheId);
 					}
 				}
-				
-				private int getIdleTimeout() {
-					int idle;
-					Object idle_timeout = get("$idle_timeout");
-					
-					if (idle_timeout == null) {
-						return 0;
-					} else {
-						idle = (int) idle_timeout;
-					}
-					
-					return idle;
-				}
-				
-				private int getMaxAliveTimeout() {
-					int alive;
-					Object alive_timeout = get("$alive_timeout");
-					
-					if (alive_timeout == null) {
-						return 0;
-					} else {
-						alive = (int) alive_timeout;
-					}
-					
-					return alive;
-				}
-				
 				@Override
 				public void renew() {
-					int idle = getIdleTimeout();
-					
-					if (idle > 0) {
-						if (properties.isRedisEnable()) {
-							redis.expire(addSuffix(cacheId), idle, TimeUnit.SECONDS);
-						} else {
-							map.put("$activetime", System.currentTimeMillis());
-						}
-					}
-				}
-
-				@Override
-				public boolean isInvalid() {
-					if (properties.isRedisEnable()) {
-						if (!redis.hasKey(addSuffix(cacheId))) {
-							return true;
-						} else {
-							return false;
-						}
-					} else {
-						int idle = getIdleTimeout();
-						int maxAlive = getMaxAliveTimeout();
-						long createtime = (long) map.get("$createtime");
-						long activetime = idle > 0 ? (long) map.get("$activetime") : 0;
-						long now = System.currentTimeMillis();
+					if (properties.getRedis().isEnable()) {
+						Integer idle = get("$idleTimeout", Integer.class);
+						idle = idle == null ? idleTimeout : idle;
 						
-						if (idle > 0 && ((now - activetime) / 1000) >= idle) {
-							return true;
-						} else if (maxAlive > 0 && ((now - createtime) / 1000) >= maxAlive) {
-							return true;
-						} else {
-							return false;
+						if (idle > 0) {
+							redis.expire(addSuffix(cacheId), idle, TimeUnit.SECONDS);
 						}
 					}
 				}
 			};
 			
 			if (!hasCache) {
-				cache.put("$createtime", System.currentTimeMillis());
-				cache.put("$idle_timeout", idleTimeout);
-				cache.put("$alive_timeout", maxAliveTimeout);
-				
-				if (properties.isRedisEnable()) {
+				if (properties.getRedis().isEnable()) {
+					cache.put("$createtime", System.currentTimeMillis());
+					cache.put("$aliveTimeout", maxAliveTimeout);
+					cache.put("$idleTimeout", idleTimeout);
+					
 					if (idleTimeout < 1) {
 						redis.expire(addSuffix(cacheId), maxAliveTimeout, TimeUnit.SECONDS);
 					} else {
 						cache.renew();
 					}
-				}
-				
-				if (!properties.isRedisEnable()) {
+				} else {
 					caches.put(cacheId, cache, idleTimeout, maxAliveTimeout);
 				}
-			} else if (properties.isRedisEnable()) {
-				long createtime = cache.get("$createtime", long.class);
-				int maxAlive = cache.get("$alive_timeout", int.class);
+			} else if (properties.getRedis().isEnable()) {
+				Long createtime = cache.get("$createtime", Long.class);
+				Integer maxAlive = cache.get("$aliveTimeout", Integer.class);
 				
-				if ((System.currentTimeMillis() - createtime) / 1000 >= maxAlive) {
+				if (createtime == null || maxAlive == null) {
+					return null;
+				}
+				
+				if (((System.currentTimeMillis() - createtime) / 1000) >= maxAlive) {
 					cache.destory();
 					return null;
 				} else {

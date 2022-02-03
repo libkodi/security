@@ -1,4 +1,4 @@
-package io.github.libkodi.security.entity;
+package io.github.libkodi.security.factory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

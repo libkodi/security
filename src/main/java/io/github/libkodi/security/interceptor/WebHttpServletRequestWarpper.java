@@ -28,7 +28,7 @@ public class WebHttpServletRequestWarpper extends HttpServletRequestWrapper {
 		super(request);
 		
 		body = HttpRequestUtils.getBody(request); // 读取body并保存
-		cacheManager.put("$body", body);
+		cacheManager.addThreadVar("$body", body);
 	}
 	
 	public byte[] getBody() {
