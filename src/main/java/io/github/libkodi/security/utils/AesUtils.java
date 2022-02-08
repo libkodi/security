@@ -11,7 +11,6 @@ import org.springframework.util.Base64Utils;
 
 /**
  * AES加密封装
- * @author solitpine
  *
  */
 public class AesUtils {

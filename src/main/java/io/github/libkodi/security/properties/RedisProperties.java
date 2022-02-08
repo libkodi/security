@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class RedisProperties {
-	private boolean enable = false;
-	private String prefix = "redis";
+	private boolean enable = false; // 是否开启redis设置
+	private String prefix = "redis"; // redis保存的变量的前缀
 }

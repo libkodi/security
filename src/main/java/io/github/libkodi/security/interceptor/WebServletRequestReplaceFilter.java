@@ -16,9 +16,7 @@ import io.github.libkodi.security.CacheManager;
 
 /**
  * 
- * @author solitpine
- * @description 拦截请求对象并以自定义请求对象容器替换 
- *
+ * 拦截请求对象并以自定义请求对象容器替换 
  */
 public class WebServletRequestReplaceFilter implements Filter {
 

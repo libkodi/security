@@ -7,10 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 
- * @author solitpine
- * @description 参数注解，用来获取请求参数(包含json形式的主体参数) 
- *
+ * 用来获取请求参数(包含json形式的主体参数) 
  */
 @Target({ ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)

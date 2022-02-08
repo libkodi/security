@@ -14,10 +14,7 @@ import io.github.libkodi.security.interfaces.AuthFilterBeforeHandle;
 import io.github.libkodi.security.interfaces.AuthFilterHandle;
 
 /**
- * 
- * @author solitpine
- * @description api过滤器 
- *
+ * Api过滤器
  */
 public class FilterManager {
 	private ArrayList<HashMap<String, Object>> list = new ArrayList<HashMap<String, Object>>();
@@ -26,6 +23,14 @@ public class FilterManager {
 	
 	public FilterManager() {}
 	
+	/**
+	 * 
+	 * 添加一个匹配处理
+	 *
+	 * @param match 正则表达式
+	 * @param handler 匹配到后的处理句柄
+	 * @return FilterManager
+	 */
 	public FilterManager add(String match, AuthFilterHandle handler) {
 		HashMap<String, Object> filter = new HashMap<String, Object>();
 		filter.put("regexp", match);
@@ -34,16 +39,38 @@ public class FilterManager {
 		return this;
 	}
 	
+	/**
+	 * 
+	 * 筛选前的处理句柄
+	 *
+	 * @param handler 处理句柄
+	 * @return FilterManager
+	 */
 	public FilterManager setBeforeFilter(AuthFilterBeforeHandle handler) {
 		beforeHandler  = handler;
 		return this;
 	}
 	
+	/**
+	 * 
+	 * 筛选后的处理句柄
+	 *
+	 * @param handler 处理句柄
+	 * @return FilterManager
+	 */
 	public FilterManager setAfterFilter(AuthFilterAfterHandle handler) {
 		afterHandler = handler;
 		return this;
 	}
 	
+	/**
+	 * 
+	 * 执行筛选前的处理
+	 *
+	 * @param context 上下文
+	 * @param request 请求类
+	 * @return true/false
+	 */
 	public boolean doBeforeFilter(SecurityManager context, HttpServletRequest request) {
 		if (beforeHandler != null) {
 			return beforeHandler.call(context, request);
@@ -51,7 +78,16 @@ public class FilterManager {
 		
 		return true;
 	}
-	
+		
+	/**
+	 * 
+	 * 执行筛选后的处理
+	 *
+	 * @param context 上下文
+	 * @param response 响应类
+	 * @param value Api执行返回的结果
+	 * @return 处理后的结果
+	 */
 	public Object doAfterFilter(SecurityManager context, HttpServletResponse response, Object value) {
 		if (afterHandler != null) {
 			return afterHandler.call(context, response, value);
@@ -60,6 +96,13 @@ public class FilterManager {
 		return value;
 	}
 	
+	/**
+	 * 
+	 * 查找匹配的句柄
+	 *
+	 * @param request 请求类
+	 * @return AuthFilterHandle
+	 */
 	public AuthFilterHandle getFilter(HttpServletRequest request) {
 		String uri = request.getRequestURI();
 		Iterator<HashMap<String, Object>> iter = list.iterator();

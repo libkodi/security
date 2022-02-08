@@ -18,10 +18,7 @@ import io.github.libkodi.security.interfaces.RolesHandle;
 import io.github.libkodi.security.utils.ServletRequestUtils;
 
 /**
- * 
- * @author solitpine
- * @description 角色验证注入 
- *
+ * 规则组验证切入 
  */
 @Configuration
 @Aspect

@@ -16,10 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * 
- * @author solitpine
- * @description 跨域处理 
- *
+ * 跨域处理 
  */
 @Component
 @WebFilter(urlPatterns = "/*")

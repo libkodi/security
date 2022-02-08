@@ -18,13 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpRequestUtils {
 	/**
-	 * 
-	 * @description 获取请求终端IP
-	 * @author solitpine
-	 * @date 6 Sep 2021
-	 * @time 15:06:45
-	 * @param request
-	 * @return
+	 * 获取请求终端IP
 	 */
 	public static String getRemoteAddress(HttpServletRequest request) {
 		String ip = (String) request.getAttribute("REQUEST_REMOTE_ADDRESS");
@@ -61,13 +55,7 @@ public class HttpRequestUtils {
 	}
 	
 	/**
-	 *
-	 * @description 读取请求主体
-	 * @author solitpine
-	 * @date 6 Sep 2021
-	 * @time 15:07:08
-	 * @param request
-	 * @return
+	 * 读取请求主体
 	 */
 	public static byte[] getBody(HttpServletRequest request) {
 		byte[] resultBody = new byte[0];
@@ -102,12 +90,7 @@ public class HttpRequestUtils {
 	}
 	
 	/**
-	 * @description 从请求中获取SessionId
-	 * @author solitpine
-	 * @date 6 Sep 2021
-	 * @time 15:07:24
-	 * @param request
-	 * @return
+	 * 从请求中获取变量
 	 */
 	public static String getParameter(HttpServletRequest request, String key) {
 		String res = request.getParameter(key);
@@ -131,7 +114,16 @@ public class HttpRequestUtils {
 		
 		return res;
 	}
-
+	
+	/**
+	 * 
+	 * 将请求中带的所有变量统一到一个对象中
+	 *
+	 * @param request
+	 * @param cacheManager
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
 	public static JSONObject getAllParameter(HttpServletRequest request, CacheManager cacheManager) throws UnsupportedEncodingException {
 		byte[] body = cacheManager.getThreadVar("$body", byte[].class);
 		JSONObject allParams = cacheManager.getThreadVar("$params", JSONObject.class);

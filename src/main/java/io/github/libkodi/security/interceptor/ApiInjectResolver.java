@@ -23,10 +23,7 @@ import io.github.libkodi.security.utils.ServletRequestUtils;
 import io.github.libkodi.security.utils.StringUtils;
 
 /**
- * 
- * @author solitpine
- * @description 参数注解支持 
- *
+ * 参数注解支持 
  */
 public class ApiInjectResolver implements HandlerMethodArgumentResolver {
 

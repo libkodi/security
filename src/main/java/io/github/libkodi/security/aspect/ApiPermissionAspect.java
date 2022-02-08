@@ -18,10 +18,7 @@ import io.github.libkodi.security.interfaces.PermissionsHandle;
 import io.github.libkodi.security.utils.ServletRequestUtils;
 
 /**
- * 
- * @author solitpine
- * @description 许可验证注入 
- *
+ * 许可权限验证切入 
  */
 @Aspect
 @Configuration

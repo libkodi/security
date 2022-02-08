@@ -7,6 +7,9 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
 
+/**
+ * jwt解析器
+ */
 public class JwtParser {
 	private Claims claims;
 	@SuppressWarnings("rawtypes")

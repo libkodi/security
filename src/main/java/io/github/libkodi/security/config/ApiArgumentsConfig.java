@@ -12,16 +12,16 @@ import io.github.libkodi.security.SecurityManager;
 import io.github.libkodi.security.interceptor.ApiInjectResolver;
 
 /**
- * 
- * @author solitpine
- * @description 为参数注解添加支持 
- *
+ * 为参数注解添加支持 
  */
 @Configuration
 public class ApiArgumentsConfig implements WebMvcConfigurer {
 	@Autowired
 	private SecurityManager context;
 	
+	/**
+	 * 参数注入支持
+	 */
 	@Override
 	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
 		resolvers.add(new ApiInjectResolver(context));
@@ -29,6 +29,7 @@ public class ApiArgumentsConfig implements WebMvcConfigurer {
 	
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
+		// 添加Api结束时，移除LocalThread的处理
 		registry.addInterceptor(new CacheInterceptor(context));
 	}
 	

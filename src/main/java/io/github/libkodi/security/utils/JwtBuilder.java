@@ -7,6 +7,9 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator.Builder;
 import com.auth0.jwt.algorithms.Algorithm;
 
+/**
+ * jwt构建器
+ */
 public class JwtBuilder {
 	private Builder jwt;
 	private HashMap<String, Object> headerClaim = new HashMap<String, Object>();

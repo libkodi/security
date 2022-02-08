@@ -9,10 +9,13 @@ import io.github.libkodi.security.interfaces.GetCacheIdHandle;
 import io.github.libkodi.security.interfaces.GetRemoteAddressHandle;
 import io.github.libkodi.security.properties.AuthProperties;
 
+/**
+ * 主配置类
+ */
 @Configuration
 public class SecurityContextConfiguration {
 	/**
-	 * 参数值
+	 * 配置参数
 	 */
 	@Autowired
 	private AuthProperties properties;
@@ -23,9 +26,15 @@ public class SecurityContextConfiguration {
 	@Autowired(required = false)
 	private RedisTemplate<String, Object> redis;
 	
+	/**
+	 * 获取请求IP的句柄
+	 */
 	@Autowired(required = false)
 	private GetRemoteAddressHandle getRemoteAddresshandle;
 	
+	/**
+	 * 获取缓存ID的句柄
+	 */
 	@Autowired(required = false)
 	private GetCacheIdHandle getCacheIdHandle;
 	

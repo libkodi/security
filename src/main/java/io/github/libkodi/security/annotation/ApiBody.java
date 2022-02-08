@@ -8,10 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * 
- * @author solitpine
- * @description 参数注解，用来获取请求主体 
- *
+ * 用来获取请求主体 
  */
 @Documented
 @Retention(RUNTIME)

@@ -8,11 +8,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 public class ServletRequestUtils {
 	/**
-	 * @description 获取当前请求对象
-	 * @author solitpine
-	 * @date 6 Sep 2021
-	 * @time 15:08:52
-	 * @return
+	 * 获取当前请求对象
 	 */
 	public static HttpServletRequest getHttpServletRequest() {
 		ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -20,11 +16,7 @@ public class ServletRequestUtils {
 	}
 	
 	/**
-	 * @description 获取当前响应对象
-	 * @author solitpine
-	 * @date 6 Sep 2021
-	 * @time 15:08:52
-	 * @return
+	 * 获取当前响应对象
 	 */
 	public static HttpServletResponse getHttpServletResponse() {
 		ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();

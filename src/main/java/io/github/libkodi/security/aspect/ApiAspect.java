@@ -19,10 +19,7 @@ import io.github.libkodi.security.interfaces.ExceptionHandle;
 import io.github.libkodi.security.utils.ServletRequestUtils;
 
 /**
- * 
- * @author solitpine
- * @description 权限验证切入
- *
+ * 权限验证切入
  */
 @Aspect
 @Order(-1000)
@@ -33,9 +30,15 @@ public class ApiAspect {
 	@Autowired(required = false)
 	private FilterManager filter;
 	
+	/**
+	 * 权限控制上下文对象，用来获取其它管理器与配置属性
+	 */
 	@Autowired
 	private SecurityManager context;
 	
+	/**
+	 * Api出错的接收句柄
+	 */
 	@Autowired(required = false)
 	private ExceptionHandle errorCallback;
 	
@@ -44,11 +47,15 @@ public class ApiAspect {
 		HttpServletRequest request = ServletRequestUtils.getHttpServletRequest();
 		HttpServletResponse response = ServletRequestUtils.getHttpServletResponse();
 		
+		/**
+		 * 检测IP是否被阻止访问
+		 */
+		if (!context.getAccessManager().verify(request)) {
+			return (new Error402("Frequent requests")).sync(request, response);
+		}
+		
 		if (filter != null) {
-			if (!context.getAccessManager().verify(request)) {
-				return (new Error402("Requests are too frequent. Please try again later")).sync(request, response);
-			}
-			
+			// Api执行前的处理回调
 			if (!filter.doBeforeFilter(context, request)) {
 				return (new Error401("Unauthorized")).sync(request, response);
 			}
@@ -64,7 +71,11 @@ public class ApiAspect {
 		}
 		
 		try {
-			return filter.doAfterFilter(context, response, point.proceed());
+			if (filter != null) {
+				return filter.doAfterFilter(context, response, point.proceed());
+			} else {
+				return point.proceed();
+			}
 		} catch (Exception e) {
 			if (errorCallback != null) {
 				try {

@@ -15,23 +15,14 @@ import io.github.libkodi.security.interceptor.WebServletRequestReplaceFilter;
 import io.github.libkodi.security.properties.AuthProperties;
 
 /**
- * 
- * @author solitpine
- * @description 创建一些主要的bean 
- *
+ * 创建一些主要的bean 
  */
 @Order(-1200)
 @Configuration
 @EnableConfigurationProperties(AuthProperties.class)
 public class ApiConfiguration {
 	/**
-	 * 
-	 * @description 创建redis模板
-	 * @author solitpine
-	 * @date 6 Sep 2021
-	 * @time 14:51:00
-	 * @param factory
-	 * @return
+	 * 创建redis模板
 	 */
 	@Bean
 	public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
@@ -43,12 +34,7 @@ public class ApiConfiguration {
 	}
 	
 	/**
-	 * 
-	 * @description 添加对requestBody的重复读取支持
-	 * @author solitpine
-	 * @date 6 Sep 2021
-	 * @time 14:51:22
-	 * @return
+	 * 添加对requestBody的重复读取支持
 	 */
 	@SuppressWarnings("rawtypes")
 	@Bean

@@ -1,5 +1,10 @@
 package io.github.libkodi.security.utils.dataset;
 
+/**
+ * 数据节点
+ *
+ * @param <T> 数据节点保存的数据类型
+ */
 public class DataNode<T> {
 	private T value = null;
 	private long createtime;
@@ -9,6 +14,14 @@ public class DataNode<T> {
 	
 	public DataNode(T value) {
 		this.value = value;
+		createtime = System.currentTimeMillis();
+		activetime = createtime;
+	}
+	
+	public DataNode(T value, int maxIdle, int maxAlive) {
+		this.value = value;
+		idleTimeout = maxIdle;
+		aliveTimeout = maxAlive;
 		createtime = System.currentTimeMillis();
 		activetime = createtime;
 	}

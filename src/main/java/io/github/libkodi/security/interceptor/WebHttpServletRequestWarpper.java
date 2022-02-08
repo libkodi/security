@@ -15,10 +15,7 @@ import io.github.libkodi.security.utils.HttpRequestUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 
- * @author solitpine
- * @description 请求对象容器，实现body的重复利用 
- *
+ * 请求对象容器，实现body的重复利用 
  */
 @Slf4j
 public class WebHttpServletRequestWarpper extends HttpServletRequestWrapper {
