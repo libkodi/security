@@ -6,12 +6,12 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.data.redis.core.RedisTemplate;
 
+import io.github.libkodi.objectlist.withexpires.PeriodMap;
 import io.github.libkodi.security.entity.Access;
 import io.github.libkodi.security.interfaces.GetRemoteAddressHandle;
 import io.github.libkodi.security.properties.AuthProperties;
 import io.github.libkodi.security.utils.HttpRequestUtils;
 import io.github.libkodi.security.utils.StringUtils;
-import io.github.libkodi.security.utils.dataset.DataSet;
 
 /**
  * 访问限制管理器
@@ -21,7 +21,7 @@ public class AccessManager {
 	private static AccessManager instance;
 	private AuthProperties properties;
 	private RedisTemplate<String, Object> redis;
-	private DataSet<Access> data = new DataSet<Access>();
+	private PeriodMap<Access> data = new PeriodMap<Access>();
 	private GetRemoteAddressHandle getRemoteAddressHandle;
 	private final Object mutex;
 	

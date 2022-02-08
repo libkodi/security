@@ -131,6 +131,13 @@
 	       <artifactId>bcprov-jdk16</artifactId>
 	       <version>1.46</version>
 		</dependency>
+		
+		<!-- objectlist -->
+		<dependency>
+			<groupId>io.github.libkodi</groupId>
+			<artifactId>objectlist</artifactId>
+			<version>1.0.0</version>
+		</dependency>
     </dependencies>
     
 	<profiles>

@@ -13,10 +13,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
+import io.github.libkodi.objectlist.withexpires.PeriodMap;
 import io.github.libkodi.security.interfaces.Cache;
 import io.github.libkodi.security.properties.AuthProperties;
 import io.github.libkodi.security.utils.StringUtils;
-import io.github.libkodi.security.utils.dataset.DataSet;
 
 /**
  * 缓存管理器
@@ -28,7 +28,7 @@ public class CacheManager implements Serializable {
 	private RedisTemplate<String, Object> redis;
 	private AuthProperties properties;
 	final Object mutex;
-	private DataSet<Cache> caches = new DataSet<Cache>();
+	private PeriodMap<Cache> caches = new PeriodMap<Cache>();
 	private HashMap<String, Object> envVars = new HashMap<String, Object>();
 	
 	/**
