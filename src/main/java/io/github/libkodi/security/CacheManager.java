@@ -254,7 +254,7 @@ public class CacheManager implements Serializable {
 	 * 
 	 */
 	public int getMaxIdle() {
-		return properties.getCache().getMaxIdle();
+		return properties.getCache().getMaxIdleTime();
 	}
 	
 	/**
@@ -263,7 +263,7 @@ public class CacheManager implements Serializable {
 	 *
 	 */
 	public int getMaxAlive() {
-		return properties.getCache().getMaxAlive();
+		return properties.getCache().getMaxAliveTime();
 	}
 	
 	/**

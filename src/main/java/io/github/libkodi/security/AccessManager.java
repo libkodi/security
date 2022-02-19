@@ -86,6 +86,7 @@ public class AccessManager {
 				
 				return !checkBlocked(clientIp);
 			} catch (Exception e) {
+				e.printStackTrace();
 				return false;
 			}
 		}
@@ -102,10 +103,10 @@ public class AccessManager {
 		if (!properties.getRedis().isEnable()) {
 			Access access = data.get(ip);
 			
-			if (access.getCount() > properties.getAccess().getLimit()) {
+			if (access.getCount() > properties.getAccess().getLimitCount()) {
 				access.setBlocked(true);
 				data.remove(ip);
-				data.put(ip, access, 0, properties.getAccess().getBlock());
+				data.put(ip, access, 0, properties.getAccess().getBlockTime());
 				return true;
 			} else {
 				return false;
@@ -113,10 +114,10 @@ public class AccessManager {
 		} else {
 			int total = (int) redis.opsForValue().get(joinRedisKey(ip));
 			
-			if (total <= properties.getAccess().getLimit()) {
+			if (total <= properties.getAccess().getLimitCount()) {
 				return false;
 			} else {
-				redis.opsForValue().set(joinRedisKey(ip) + ":blocked", true, properties.getAccess().getBlock(), TimeUnit.SECONDS);
+				redis.opsForValue().set(joinRedisKey(ip) + ":blocked", true, properties.getAccess().getBlockTime(), TimeUnit.SECONDS);
 				redis.delete(joinRedisKey(ip));
 				return true;
 			}
@@ -133,7 +134,8 @@ public class AccessManager {
 	private boolean isBlocked(String ip) {
 		if (!properties.getRedis().isEnable()) {
 			if (data.containsKey(ip)) {
-				return data.get(ip).isBlocked();
+				Access access = data.get(ip);
+				return access == null ? false : access.isBlocked();
 			} else {
 				return false;
 			}
@@ -154,17 +156,21 @@ public class AccessManager {
 			long total = 0;
 			
 			if (data.containsKey(ip)) {
-				total = data.get(ip).increment();
+				Access access = data.get(ip);
+				
+				if (access != null) {
+					total = access.increment();
+				} else {
+					total = createNewAccess(ip).increment();
+				}
 			} else {
-				Access access = new Access();
-				access.setIp(ip);
-				total = access.increment();
-				data.put(ip, access, 0, properties.getAccess().getRange());
+				total = createNewAccess(ip).increment();
 			}
 			
 			return total;
 		} else {
 			String rkey = joinRedisKey(ip);
+			
 			boolean first = false;
 			
 			if (!redis.hasKey(rkey)) {
@@ -174,13 +180,20 @@ public class AccessManager {
 			long total = redis.opsForValue().increment(rkey);
 			
 			if (first) {
-				redis.expire(rkey, properties.getAccess().getRange(), TimeUnit.SECONDS);
+				redis.expire(rkey, properties.getAccess().getTimeRange(), TimeUnit.SECONDS);
 			}
 			
 			return total;
 		}
 	}
 	
+	private Access createNewAccess(String ip) {
+		Access access = new Access();
+		access.setIp(ip);
+		data.put(ip, access, 0, properties.getAccess().getTimeRange());
+		return access;
+	}
+
 	/**
 	 * 
 	 * 拼接一个redis上存储用的key

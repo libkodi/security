@@ -16,6 +16,7 @@ import io.github.libkodi.security.SecurityManager;
 import io.github.libkodi.security.annotation.ApiBody;
 import io.github.libkodi.security.annotation.ApiCache;
 import io.github.libkodi.security.annotation.ApiParam;
+import io.github.libkodi.security.interfaces.Cache;
 import io.github.libkodi.security.interfaces.GetCacheIdHandle;
 import io.github.libkodi.security.properties.AuthProperties;
 import io.github.libkodi.security.utils.HttpRequestUtils;
@@ -109,7 +110,13 @@ public class ApiInjectResolver implements HandlerMethodArgumentResolver {
 			String cacheId = getCacheIdHandle != null ? getCacheIdHandle.call(request, properties.getCache().getKey()) : HttpRequestUtils.getParameter(request, properties.getCache().getKey());
 			
 			if (!StringUtils.isEmpty(cacheId)) {
-				return cacheManager.getCache(cacheId);
+				Cache cache = cacheManager.getCache(cacheId);
+				
+				if (cache == null && apiCache.create()) {
+					return cacheManager.create(cacheId, properties.getCache().getMaxIdleTime(), properties.getCache().getMaxAliveTime(), true);
+				} else {
+					return cache;
+				}
 			} else if (apiCache.create()) {
 				return cacheManager.create();
 			}
