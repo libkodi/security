@@ -4,11 +4,17 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import io.github.libkodi.security.CacheManager;
 import io.github.libkodi.security.utils.HttpRequestUtils;
@@ -19,15 +25,42 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class WebHttpServletRequestWarpper extends HttpServletRequestWrapper {
-	private final byte[] body;
+	private byte[] body = null;
+	private MultipartHttpServletRequest multipartHttpServletRequest = null;
+	
+	public WebHttpServletRequestWarpper(MultipartHttpServletRequest request, CacheManager cacheManager) {
+		super(request);
+		readBodyAllBytes(request, cacheManager);
+		this.multipartHttpServletRequest  = request;
+	}
+	
+	public MultipartFile getFile(String name) {
+		return multipartHttpServletRequest == null ? null : multipartHttpServletRequest.getFile(name);
+	}
+	
+	public Map<String, MultipartFile> getFileMap() {
+		return multipartHttpServletRequest == null ? null : multipartHttpServletRequest.getFileMap();
+	}
+	
+	public Iterator<String> getFileNames() {
+		return multipartHttpServletRequest == null ? null : multipartHttpServletRequest.getFileNames();
+	}
+	
+	public List<MultipartFile> getFiles(String name) {
+		return multipartHttpServletRequest == null ? null : multipartHttpServletRequest.getFiles(name);
+	}
 	
 	public WebHttpServletRequestWarpper(HttpServletRequest request, CacheManager cacheManager) {
 		super(request);
 		
+		readBodyAllBytes(request, cacheManager);
+	}
+	
+	private void readBodyAllBytes(HttpServletRequest request, CacheManager cacheManager) {
 		body = HttpRequestUtils.getBody(request); // 读取body并保存
 		cacheManager.addThreadVar("$body", body);
 	}
-	
+
 	public byte[] getBody() {
 		return body;
 	}
